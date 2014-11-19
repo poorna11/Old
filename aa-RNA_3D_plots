@@ -1,0 +1,45 @@
+"""Detect and plot RNA base- amino acid interactions."""
+
+
+
+from fr3d.cif.reader import Cif
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+#read cif file and store structure
+new_aa_x = []
+new_aa_y = []
+new_aa_z = []
+def main(filename):
+    with open(filename, 'rb') as raw:
+        structure = Cif(raw).structure()
+        """All RNA bases are placed in the standard orientation. All Hydrogen
+ atoms are inferred. Rotation matrix is calculated for each base."""
+
+        structure.infer_hydrogens()
+    
+    for residue in structure.residues(chain='A', sequence = ['C']):
+        base_center = residue.centers['base']
+        for aa_residue in structure.residues(sequence = 'TYR'):
+                         
+            for atom in aa_residue.atoms():
+                aa_center = aa_residue.centers['aa_sidechain']
+                dist_vector = np.subtract(base_center, aa_center)
+                dist_matrix = np.matrix(dist_vector)
+                transposed_dist_vector = dist_matrix.transpose()
+                dist_scalar = np.linalg.norm(dist_vector)
+                if dist_scalar <= 10:
+                    new_aa_center = residue.rotation_matrix * transposed_dist_vector
+                    new_aa_x.append(new_aa_center[0])
+                    new_aa_y.append(new_aa_center[1])
+                    new_aa_z.append(new_aa_center[2])
+main('E:\\Leontis\\Python scripts\\2AW7.cif')
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(new_aa_x,new_aa_y,new_aa_z, c= 'r', marker = 'o')
+ax.scatter(0, 0, 0, c='b', marker='o')
+ax.set_xlabel('X Axis')
+ax.set_ylabel('Y Axis')
+ax.set_zlabel('Z Axis')
+plt.title('C with Tyr sidechain')
+plt.show()
